@@ -47,3 +47,17 @@ This command should be run in the Python environment where you want to run the s
 4. Run the Python script with `mongosync_plotly_multiple.py`.
 
 Please note that you need to have Python and pip installed on your machine to run the script and install the dependencies. If you want to use Docker, you also need to have Docker installed.
+
+## Accessing the Application and Viewing Plots
+
+Once the application is running, you can access it by opening a web browser and navigating to `http://localhost:3030`. This assumes that the application is running on the same machine where you're opening the browser, and that it's configured to listen on port 3030.
+
+## Uploading the mongosync Log File
+
+The method for uploading the `mongosync` log file depends on how the application is designed. The application provides a user interface for uploading files, you can use that. Typically, this involves clicking a "Browse" or "Upload" button, selecting the file from your file system, and then clicking an "Open" or "Upload" button.
+
+## Viewing the Plot Information
+
+Once the `mongosync` log file is uploaded, the application processes the data and generates the plots. You can view these plots by navigating to the appropriate page in the application. The exact method depends on how the application is designed, but typically, you would click on a link or button, or navigate to a specific URL.
+
+If the plots aren't immediately visible after uploading the file, you may need to refresh the page. If the plots still aren't visible, check for any error messages or notifications from the application.
