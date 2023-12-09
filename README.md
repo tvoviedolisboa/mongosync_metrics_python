@@ -1,6 +1,6 @@
 # mongosync_metrics_python
 
-This project contains a Python script, `mmongosync_plotly_multiple.py`, that processes the `mongosync` JSON data and generates various plots using Plotly on port **3030**. The script also includes a Dockerfile for containerizing the application and a `requirements.txt` file listing the Python dependencies.
+This project contains a Python script, `mongosync_plotly_multiple.py`, that processes the `mongosync` JSON data and generates various plots using Plotly on port **3030**. The script also includes a Dockerfile for containerizing the application and a `requirements.txt` file listing the Python dependencies.
 
 ![Alt text for image 1](static/image1.png)
 ![Alt text for image 2](static/image2.png)
