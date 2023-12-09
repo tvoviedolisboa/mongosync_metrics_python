@@ -14,4 +14,4 @@ RUN pip install --no-cache-dir matplotlib flask
 EXPOSE 3030
 
 # Run the application when the container launches
-CMD ["python", "mixed_json_arcadia_plotly_multiple_edit_text"]
+CMD ["python", "mongosync_plotly_multiple"]
