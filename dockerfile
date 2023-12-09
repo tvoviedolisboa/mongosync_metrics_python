@@ -8,10 +8,10 @@ WORKDIR /app
 ADD . /app
 
 # Install any needed packages specified in requirements.txt
-RUN pip install --no-cache-dir matplotlib flask
+RUN pip install --no-cache-dir matplotlib flask plotly
 
 # Make port 3030 available to the world outside this container
 EXPOSE 3030
 
 # Run the application when the container launches
-CMD ["python", "mongosync_plotly_multiple"]
+CMD ["python", "mongosync_plotly_multiple.py"]

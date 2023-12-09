@@ -23,6 +23,8 @@ def upload_form():
         <form method="post" action="/upload" enctype="multipart/form-data">
             <input type="file" name="file">
             <input type="submit" value="Upload">
+            <p>This form allows you to upload a mongosync log file. Once the file is uploaded, the application will process the data and generate plots.</p>
+            <img src="/path/to/image.jpg" alt="Description of image">
         </form>
     ''')
 
@@ -87,26 +89,6 @@ def upload_file():
         times = [datetime.strptime(item['time'][:26], "%Y-%m-%dT%H:%M:%S.%f") for item in data if 'time' in item]
         totalEventsApplied = [item['totalEventsApplied'] for item in data if 'totalEventsApplied' in item]
         lagTimeSeconds = [item['lagTimeSeconds'] for item in data if 'lagTimeSeconds' in item]
-
-        # Create a subplot for the scatter plots and a separate subplot for the table
-        fig = make_subplots(rows=4, cols=1, subplot_titles=("Total Events Applied", "Lag Time Seconds", "MongoSync Options"), specs=[[{}], [{}], [{"type": "table"}], [{}]])
-
-        # Add the version information as an annotation to the plot
-        fig.add_annotation( x=0.5, y=1.05, xref="paper", yref="paper", text=version_text, showarrow=False, font=dict(size=12))
-
-        # Add the table trace to the figure
-        fig.add_trace(table_trace, row=3, col=1)
-
-        # Add traces
-        fig.add_trace(go.Scatter(x=times, y=totalEventsApplied, mode='lines', name='Total Events Applied'), row=1, col=1)
-        fig.add_trace(go.Scatter(x=times, y=lagTimeSeconds, mode='lines', name='Lag Time Seconds'), row=2, col=1)
-        
-
-
-        # Extract the data you want to plot
-        times = [datetime.strptime(item['time'][:26], "%Y-%m-%dT%H:%M:%S.%f") for item in data if 'time' in item]
-        totalEventsApplied = [item['totalEventsApplied'] for item in data if 'totalEventsApplied' in item]
-        lagTimeSeconds = [item['lagTimeSeconds'] for item in data if 'lagTimeSeconds' in item]
         CollectionCopySourceRead = [float(item['CollectionCopySourceRead']['averageDurationMs']) for item in mongosync_ops_stats if 'CollectionCopySourceRead' in item and 'averageDurationMs' in item['CollectionCopySourceRead']]
         CollectionCopyDestinationWrite = [float(item['CollectionCopyDestinationWrite']['averageDurationMs']) for item in mongosync_ops_stats if 'CollectionCopyDestinationWrite' in item and 'averageDurationMs' in item['CollectionCopyDestinationWrite']]
         CEASourceRead = [float(item['CEASourceRead']['averageDurationMs']) for item in mongosync_ops_stats if 'CEASourceRead' in item and 'averageDurationMs' in item['CEASourceRead']]
@@ -136,7 +118,6 @@ def upload_file():
         fig.add_trace(go.Scatter(x=times, y=CEADestinationWrite, mode='lines', name='CEADestinationWrite'), row=5, col=1)
         fig.add_trace(go.Scatter(x=times, y=CEADestinationWrite_maximum, mode='lines', name='CEA Destination Write Maximum'), row=5, col=1)
         fig.add_trace(go.Scatter(x=times, y=CEADestinationWrite_numOperations, mode='lines', name='CEA Destination Write Number of Operations'), row=5, col=1)
-
 
         # Update layout
         fig.update_layout(height=1800, width=1250, title_text="Replication Progress")
