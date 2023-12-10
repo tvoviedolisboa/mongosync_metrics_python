@@ -1,9 +1,8 @@
 # mongosync_metrics_python
 
-This project contains a Python script, `mongosync_plotly_multiple.py`, that processes the `mongosync` JSON data and generates various plots using Plotly on port **3030**. The script also includes a Dockerfile for containerizing the application and a `requirements.txt` file listing the Python dependencies.
+This project contains a Python script, `mmongosync_plotly_multiple.py`, that processes the `mongosync` JSON data and generates various plots using Plotly on port **3030**. The script also includes a Dockerfile for containerizing the application and a `requirements.txt` file listing the Python dependencies.
 
-![Alt text for image 1](static/image1.png)
-![Alt text for image 2](static/image2.png)
+![Alt text for image 1](static/image-1.png)
 
 ## mongosync_plotly_multiple.py
 
@@ -52,6 +51,8 @@ Please note that you need to have Python and pip installed on your machine to ru
 
 Once the application is running, you can access it by opening a web browser and navigating to `http://localhost:3030`. This assumes that the application is running on the same machine where you're opening the browser, and that it's configured to listen on port 3030.
 
+![Alt text for image 2](static/image-2.png)
+
 ## Uploading the mongosync Log File
 
 The method for uploading the `mongosync` log file depends on how the application is designed. The application provides a user interface for uploading files, you can use that. Typically, this involves clicking a "Browse" or "Upload" button, selecting the file from your file system, and then clicking an "Open" or "Upload" button.
@@ -61,3 +62,9 @@ The method for uploading the `mongosync` log file depends on how the application
 Once the `mongosync` log file is uploaded, the application processes the data and generates the plots. You can view these plots by navigating to the appropriate page in the application. The exact method depends on how the application is designed, but typically, you would click on a link or button, or navigate to a specific URL.
 
 If the plots aren't immediately visible after uploading the file, you may need to refresh the page. If the plots still aren't visible, check for any error messages or notifications from the application.
+
+## ToDo
+
+- Test with multiple mongosync versions, only tested with 1.6.1.
+- Certified the time lines.
+- Create more metrics with "TRACE" debug level

@@ -57,6 +57,15 @@ def upload_file():
         # Load lines with 'message' == "Operation duration stats."
         mongosync_ops_stats = [json.loads(line) for line in lines if json.loads(line).get('message') == "Operation duration stats."]
 
+        # Load lines with 'message' == "sent response"
+        mongosync_sent_response = [json.loads(line) for line in lines if json.loads(line).get('message') == "sent response"]
+
+        # The 'body' field is also a JSON string, so parse that as well
+        #mongosync_sent_response_body = json.loads(mongosync_sent_response['body'])
+        for response in mongosync_sent_response:
+            mongosync_sent_response_body  = json.loads(response['body'])
+            # Now you can work with the 'body' data
+
         # Create a string with all the Mongosync Options information
         mongosync_opts_text = "\n".join([json.dumps(item, indent=4) for item in mongosync_opts_list])
 
@@ -90,7 +99,11 @@ def upload_file():
         totalEventsApplied = [item['totalEventsApplied'] for item in data if 'totalEventsApplied' in item]
         lagTimeSeconds = [item['lagTimeSeconds'] for item in data if 'lagTimeSeconds' in item]
         CollectionCopySourceRead = [float(item['CollectionCopySourceRead']['averageDurationMs']) for item in mongosync_ops_stats if 'CollectionCopySourceRead' in item and 'averageDurationMs' in item['CollectionCopySourceRead']]
+        CollectionCopySourceRead_maximum = [float(item['CollectionCopySourceRead']['maximumDurationMs']) for item in mongosync_ops_stats if 'CollectionCopySourceRead' in item and 'maximumDurationMs' in item['CollectionCopySourceRead']]
+        CollectionCopySourceRead_numOperations = [float(item['CollectionCopySourceRead']['numOperations']) for item in mongosync_ops_stats if 'CollectionCopySourceRead' in item and 'numOperations' in item['CollectionCopySourceRead']]        
         CollectionCopyDestinationWrite = [float(item['CollectionCopyDestinationWrite']['averageDurationMs']) for item in mongosync_ops_stats if 'CollectionCopyDestinationWrite' in item and 'averageDurationMs' in item['CollectionCopyDestinationWrite']]
+        CollectionCopyDestinationWrite_maximum  = [float(item['CollectionCopyDestinationWrite']['maximumDurationMs']) for item in mongosync_ops_stats if 'CollectionCopyDestinationWrite' in item and 'maximumDurationMs' in item['CollectionCopyDestinationWrite']]
+        CollectionCopyDestinationWrite_numOperations = [float(item['CollectionCopyDestinationWrite']['numOperations']) for item in mongosync_ops_stats if 'CollectionCopyDestinationWrite' in item and 'numOperations' in item['CollectionCopyDestinationWrite']]
         CEASourceRead = [float(item['CEASourceRead']['averageDurationMs']) for item in mongosync_ops_stats if 'CEASourceRead' in item and 'averageDurationMs' in item['CEASourceRead']]
         CEASourceRead_maximum  = [float(item['CEASourceRead']['maximumDurationMs']) for item in mongosync_ops_stats if 'CEASourceRead' in item and 'maximumDurationMs' in item['CEASourceRead']]
         CEASourceRead_numOperations = [float(item['CEASourceRead']['numOperations']) for item in mongosync_ops_stats if 'CEASourceRead' in item and 'numOperations' in item['CEASourceRead']]
@@ -98,26 +111,46 @@ def upload_file():
         CEADestinationWrite_maximum = [float(item['CEADestinationWrite']['maximumDurationMs']) for item in mongosync_ops_stats if 'CEADestinationWrite' in item and 'maximumDurationMs' in item['CEADestinationWrite']]    
         CEADestinationWrite_numOperations = [float(item['CEADestinationWrite']['numOperations']) for item in mongosync_ops_stats if 'CEADestinationWrite' in item and 'numOperations' in item['CEADestinationWrite']] 
 
+        # Extract the 'estimatedTotalBytes' and 'estimatedCopiedBytes' values
+        estimated_total_bytes = mongosync_sent_response_body['progress']['collectionCopy']['estimatedTotalBytes']
+        estimated_copied_bytes = mongosync_sent_response_body['progress']['collectionCopy']['estimatedCopiedBytes']
+        #estimated_copied_time = mongosync_sent_response_body['time']
+
+
         # Create a subplot for the scatter plots and a separate subplot for the table
-        fig = make_subplots(rows=6, cols=1, subplot_titles=("Total Events Applied", "Collection Copy Source Read", "Collection Copy Destination Write", "CEA Source Read", "CEA Destination Write", "MongoSync Options"), specs=[[{}], [{}], [{}], [{}],[{}],[{"type": "table"}]])
+        fig = make_subplots(rows=7, cols=1, subplot_titles=("Estimated Copied Bytes", "Total Events Applied", "Collection Copy Source Read", "Collection Copy Destination Write", "CEA Source Read", "CEA Destination Write", "MongoSync Options"), specs=[[{}],[{}], [{}], [{}], [{}],[{}],[{"type": "table"}]])
 
         # Add the version information as an annotation to the plot
         fig.add_annotation( x=0.5, y=1.05, xref="paper", yref="paper", text=version_text, showarrow=False, font=dict(size=12))
 
         # Add the table trace to the figure
-        fig.add_trace(table_trace, row=6, col=1)
+        fig.add_trace(table_trace, row=7, col=1)
+
+        # Create a bar chart
+        #fig = go.Figure(data=[go.Bar(name='Estimated Total Bytes', x=['Bytes'], y=[estimated_total_bytes], row=1, col=1), go.Bar(name='Estimated Copied Bytes', x=['Bytes'], y=[estimated_copied_bytes])], row=1, col=1)
+        fig.add_trace( go.Bar( name='Estimated Total Bytes',  x=['Bytes'],  y=[estimated_total_bytes] ), row=1, col=1)
+        fig.add_trace( go.Bar( name='Estimated Copied Bytes', x=['Bytes'],  y=[estimated_copied_bytes]), row=1, col=1)
+        # If times is also a single value
+#        fig.add_trace(go.Scatter(x=[times], y=[estimated_copied_bytes], mode='lines', name='Estimated Copied Bytes Line'), row=1, col=1)
+
+        # Or if times is a list of values
+#        fig.add_trace(go.Scatter(x=times, y=[estimated_copied_bytes]*len(times), mode='lines', name='Estimated Copied Bytes Line'), row=1, col=1)
 
         # Add traces
-        fig.add_trace(go.Scatter(x=times, y=totalEventsApplied, mode='lines', name='Total Events Applied'), row=1, col=1)
-        fig.add_trace(go.Scatter(x=times, y=lagTimeSeconds, mode='lines', name='Lag Time Seconds'), row=1, col=1)
-        fig.add_trace(go.Scatter(x=times, y=CollectionCopySourceRead, mode='lines', name='Collection Copy Source Read'), row=2, col=1)
-        fig.add_trace(go.Scatter(x=times, y=CollectionCopyDestinationWrite, mode='lines', name='Collection Copy Destination Write'), row=3, col=1)
-        fig.add_trace(go.Scatter(x=times, y=CEASourceRead, mode='lines', name='CEA Source'), row=4, col=1)
-        fig.add_trace(go.Scatter(x=times, y=CEASourceRead_maximum, mode='lines', name='CEA Source Read Maximum'), row=4, col=1)
-        fig.add_trace(go.Scatter(x=times, y=CEASourceRead_numOperations, mode='lines', name='CEA Source Read Number of Operations'), row=4, col=1)
-        fig.add_trace(go.Scatter(x=times, y=CEADestinationWrite, mode='lines', name='CEADestinationWrite'), row=5, col=1)
-        fig.add_trace(go.Scatter(x=times, y=CEADestinationWrite_maximum, mode='lines', name='CEA Destination Write Maximum'), row=5, col=1)
-        fig.add_trace(go.Scatter(x=times, y=CEADestinationWrite_numOperations, mode='lines', name='CEA Destination Write Number of Operations'), row=5, col=1)
+        fig.add_trace(go.Scatter(x=times, y=totalEventsApplied, mode='lines', name='Total Events Applied'), row=2, col=1)
+        fig.add_trace(go.Scatter(x=times, y=lagTimeSeconds, mode='lines', name='Lag Time Seconds'), row=2, col=1)
+        fig.add_trace(go.Scatter(x=times, y=CollectionCopySourceRead, mode='lines', name='Collection Copy Source Read Average'), row=3, col=1)
+        fig.add_trace(go.Scatter(x=times, y=CollectionCopySourceRead_maximum, mode='lines', name='Collection Copy Source Read Maximum'), row=3, col=1)
+        fig.add_trace(go.Scatter(x=times, y=CollectionCopySourceRead_numOperations, mode='lines', name='Collection Copy Source Read Number of Operations'), row=3, col=1)
+        fig.add_trace(go.Scatter(x=times, y=CollectionCopyDestinationWrite, mode='lines', name='Collection Copy Destination Write Average'), row=4, col=1)
+        fig.add_trace(go.Scatter(x=times, y=CollectionCopyDestinationWrite_maximum, mode='lines', name='Collection Copy Destination Write Maximum'), row=4, col=1)
+        fig.add_trace(go.Scatter(x=times, y=CollectionCopyDestinationWrite_numOperations, mode='lines', name='Collection Copy Destination Write Number of Operations'), row=4, col=1)
+        fig.add_trace(go.Scatter(x=times, y=CEASourceRead, mode='lines', name='CEA Source Read Average'), row=5, col=1)
+        fig.add_trace(go.Scatter(x=times, y=CEASourceRead_maximum, mode='lines', name='CEA Source Read Maximum'), row=5, col=1)
+        fig.add_trace(go.Scatter(x=times, y=CEASourceRead_numOperations, mode='lines', name='CEA Source Read Number of Operations'), row=5, col=1)
+        fig.add_trace(go.Scatter(x=times, y=CEADestinationWrite, mode='lines', name='CEA Destination Write Average'), row=6, col=1)
+        fig.add_trace(go.Scatter(x=times, y=CEADestinationWrite_maximum, mode='lines', name='CEA Destination Write Maximum'), row=6, col=1)
+        fig.add_trace(go.Scatter(x=times, y=CEADestinationWrite_numOperations, mode='lines', name='CEA Destination Write Number of Operations'), row=6, col=1)
 
         # Update layout
         fig.update_layout(height=1800, width=1250, title_text="Replication Progress")
