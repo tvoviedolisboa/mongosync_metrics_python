@@ -73,26 +73,35 @@ def upload_file():
         version_text = "\n".join([f"MongoSync Version: {item.get('version')}, OS: {item.get('os')}, Arch: {item.get('arch')}" for item in version_info_list])
 
         # Extract the keys from the first dictionary in mongosync_opts_list
-        keys = list(mongosync_opts_list[0].keys())
-
         # For each key, extract the corresponding values from all dictionaries in mongosync_opts_list
-        values = [[item[key] for item in mongosync_opts_list] for key in keys]
+        if mongosync_opts_list:
+            keys = list(mongosync_opts_list[0].keys())
+            values = [[item[key] for item in mongosync_opts_list] for key in keys]
 
-        # If the key is 'hiddenFlags', extract its keys and values and add them to the keys and values lists
-        for i, key in enumerate(keys):
-            if key == 'hiddenFlags':
-                hidden_keys = list(values[i][0].keys())
-                hidden_values = [[item.get(key, '') for item in values[i]] for key in hidden_keys]
-                keys = keys[:i] + hidden_keys + keys[i+1:]
-                values = values[:i] + hidden_values + values[i+1:]
-                break
+            # Create a table trace with the keys as the first column and the corresponding values as the second column
+            table_trace = go.Table(
+                header=dict(values=['Key', 'Value'], font=dict(size=12, color='black')),
+                cells=dict(values=[keys, values], font=dict(size=10, color='darkblue')),
+                columnwidth=[0.75, 2.5]  # Adjust the column widths as needed
+            )
 
-        # Create a table trace with the keys as the first column and the corresponding values as the second column
-        table_trace = go.Table(
-            header=dict(values=['Key', 'Value'], font=dict(size=12, color='black')),
-            cells=dict(values=[keys, values], font=dict(size=10, color='darkblue')),
-            columnwidth=[0.75, 2.5]  # Adjust the column widths as needed
-        )
+            # Extract the data you want to plot
+            times = [datetime.strptime(item['time'][:26], "%Y-%m-%dT%H:%M:%S.%f") for item in data if 'time' in item]
+            totalEventsApplied = [item['totalEventsApplied'] for item in data if 'totalEventsApplied' in item]
+            lagTimeSeconds = [item['lagTimeSeconds'] for item in data if 'lagTimeSeconds' in item]
+
+            # Add the table trace to the figure
+            fig.add_trace(table_trace, row=7, col=1)
+
+            # If the key is 'hiddenFlags', extract its keys and values and add them to the keys and values lists
+            for i, key in enumerate(keys):
+                if key == 'hiddenFlags':
+                    hidden_keys = list(values[i][0].keys())
+                    hidden_values = [[item.get(key, '') for item in values[i]] for key in hidden_keys]
+                    keys = keys[:i] + hidden_keys + keys[i+1:]
+                    values = values[:i] + hidden_values + values[i+1:]
+        else:
+            print("mongosync_opts_list is empty")
 
         # Extract the data you want to plot
         times = [datetime.strptime(item['time'][:26], "%Y-%m-%dT%H:%M:%S.%f") for item in data if 'time' in item]
@@ -123,8 +132,6 @@ def upload_file():
         # Add the version information as an annotation to the plot
         fig.add_annotation( x=0.5, y=1.05, xref="paper", yref="paper", text=version_text, showarrow=False, font=dict(size=12))
 
-        # Add the table trace to the figure
-        fig.add_trace(table_trace, row=7, col=1)
 
         # Create a bar chart
         #fig = go.Figure(data=[go.Bar(name='Estimated Total Bytes', x=['Bytes'], y=[estimated_total_bytes], row=1, col=1), go.Bar(name='Estimated Copied Bytes', x=['Bytes'], y=[estimated_copied_bytes])], row=1, col=1)
