@@ -3,7 +3,7 @@ import plotly.subplots as sp
 from plotly.io import write_image
 from plotly.utils import PlotlyJSONEncoder
 from plotly.subplots import make_subplots
-
+from tqdm import tqdm
 from flask import Flask, request, redirect, url_for, render_template_string, send_from_directory
 import json
 from datetime import datetime
@@ -44,6 +44,14 @@ def upload_file():
     if file:
         # Read the file and convert it to a list of lines
         lines = list(file)
+
+        # Check if all lines are valid JSON
+        for line in tqdm(lines, desc="Reading lines"):
+            try:
+                json.loads(line)
+            except json.JSONDecodeError:
+                print(f"Invalid JSON: {line}")
+                return redirect(request.url)  # or handle the error in another appropriate way
 
         # Load lines with 'message' == "Replication progress."
         data = [json.loads(line) for line in lines if json.loads(line).get('message') == "Replication progress."]
@@ -91,7 +99,7 @@ def upload_file():
             lagTimeSeconds = [item['lagTimeSeconds'] for item in data if 'lagTimeSeconds' in item]
 
             # Add the table trace to the figure
-            fig.add_trace(table_trace, row=7, col=1)
+            #fig.add_trace(table_trace, row=7, col=1)
 
             # If the key is 'hiddenFlags', extract its keys and values and add them to the keys and values lists
             for i, key in enumerate(keys):
@@ -101,7 +109,10 @@ def upload_file():
                     keys = keys[:i] + hidden_keys + keys[i+1:]
                     values = values[:i] + hidden_values + values[i+1:]
         else:
-            print("mongosync_opts_list is empty")
+            #print("mongosync_opts_list is empty")
+            table_trace = go.Table(header=dict(values=['Mongosync Options']),
+            cells=dict(values=[["No Mongosync Options found in the log file"]]))
+
 
         # Extract the data you want to plot
         times = [datetime.strptime(item['time'][:26], "%Y-%m-%dT%H:%M:%S.%f") for item in data if 'time' in item]
@@ -121,8 +132,23 @@ def upload_file():
         CEADestinationWrite_numOperations = [float(item['CEADestinationWrite']['numOperations']) for item in mongosync_ops_stats if 'CEADestinationWrite' in item and 'numOperations' in item['CEADestinationWrite']] 
 
         # Extract the 'estimatedTotalBytes' and 'estimatedCopiedBytes' values
-        estimated_total_bytes = mongosync_sent_response_body['progress']['collectionCopy']['estimatedTotalBytes']
-        estimated_copied_bytes = mongosync_sent_response_body['progress']['collectionCopy']['estimatedCopiedBytes']
+        #estimated_total_bytes = mongosync_sent_response_body['progress']['collectionCopy']['estimatedTotalBytes']
+
+        if 'progress' in mongosync_sent_response_body:
+            estimated_total_bytes = mongosync_sent_response_body['progress']['collectionCopy']['estimatedTotalBytes']
+        #    fig.add_trace( go.Bar( name='Estimated Total Bytes',  x=['Bytes'],  y=[estimated_total_bytes] ), row=1, col=1)
+        else:
+            print("Key 'progress' not found in mongosync_sent_response_body")
+        #estimated_copied_bytes = mongosync_sent_response_body['progress']['collectionCopy']['estimatedCopiedBytes']
+        # Initialize estimated_total_bytes with a default value
+        estimated_total_bytes = 0
+        estimated_copied_bytes = 0
+
+        if 'progress' in mongosync_sent_response_body:
+            estimated_total_bytes = mongosync_sent_response_body['progress']['collectionCopy']['estimatedTotalBytes']
+
+        #fig.add_trace( go.Bar( name='Estimated Total Bytes',  x=['Bytes'],  y=[estimated_total_bytes] ), row=1, col=1)
+
         #estimated_copied_time = mongosync_sent_response_body['time']
 
 
@@ -158,6 +184,7 @@ def upload_file():
         fig.add_trace(go.Scatter(x=times, y=CEADestinationWrite, mode='lines', name='CEA Destination Write Average'), row=6, col=1)
         fig.add_trace(go.Scatter(x=times, y=CEADestinationWrite_maximum, mode='lines', name='CEA Destination Write Maximum'), row=6, col=1)
         fig.add_trace(go.Scatter(x=times, y=CEADestinationWrite_numOperations, mode='lines', name='CEA Destination Write Number of Operations'), row=6, col=1)
+        fig.add_trace(table_trace, row=7, col=1)
 
         # Update layout
         fig.update_layout(height=1800, width=1250, title_text="Replication Progress")
